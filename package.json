@@ -1,0 +1,36 @@
+{
+  "name": "ybdn",
+  "private": true,
+  "version": "2.0.0",
+  "description": "ybdn — Descarga audio o video de YouTube desde tu navegador. Interfaz moderna, 100% web, sin anuncios.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "node api/server.js",
+    "dev:external": "concurrently -k \"npm run dev:api\" \"npm run dev\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "@tailwindcss/postcss": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.15",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^4.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.1.2",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "vite": "^8.0.12"
+  }
+}

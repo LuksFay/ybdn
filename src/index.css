@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  @apply bg-[#0f0f11] text-slate-100;
+}
+
+#root {
+  @apply min-h-screen flex flex-col;
+}
