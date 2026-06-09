@@ -1,5 +1,6 @@
 import infoHandler from '../api/info.js'
 import downloadHandler from '../api/download.js'
+import youtubeCookiesHandler from '../api/auth/youtube-cookies.js'
 
 export default function apiRoutes() {
   return {
@@ -18,6 +19,8 @@ export default function apiRoutes() {
           await infoHandler(req, res)
         } else if (url.pathname === '/api/download' && req.method === 'GET') {
           await downloadHandler(req, res)
+        } else if (url.pathname === '/api/auth/youtube-cookies' && req.method === 'GET') {
+          await youtubeCookiesHandler(req, res)
         } else {
           res.writeHead(404, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Not found' }))

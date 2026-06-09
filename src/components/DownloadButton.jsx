@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getDownloadUrl } from '../utils/api'
 
-const DownloadButton = ({ url, itag, filename, token }) => {
+const DownloadButton = ({ url, itag, filename, cookies }) => {
   const [status, setStatus] = useState('idle')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
@@ -13,9 +13,8 @@ const DownloadButton = ({ url, itag, filename, token }) => {
     setError('')
 
     try {
-      const downloadUrl = getDownloadUrl(url, itag, token || undefined)
-      const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-      const response = await fetch(downloadUrl, { headers })
+      const downloadUrl = getDownloadUrl(url, itag, cookies || undefined)
+      const response = await fetch(downloadUrl)
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}`)

@@ -31,24 +31,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const opts = {
-      requestOptions: {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-        },
-      },
-    }
-
-    if (authHeader) {
-      opts.requestOptions.headers['Authorization'] = authHeader
+    const baseHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
     }
 
     const cookies = parseCookies(rawCookies)
-    if (cookies) {
-      opts.agent = ytdl.createAgent(cookies)
-    }
+    const agent = cookies ? ytdl.createAgent(cookies) : undefined
 
-    const basicInfo = await ytdl.getBasicInfo(url, opts)
+    // getBasicInfo: sin token, solo metadatos
+    const basicInfo = await ytdl.getBasicInfo(url, {
+      requestOptions: { headers: { ...baseHeaders } },
+      agent,
+    })
 
     const result = {
       title: basicInfo.videoDetails.title,
@@ -58,8 +52,18 @@ export default async function handler(req, res) {
       formats: [],
     }
 
+    // getInfo: con token/cookies para formatos de descarga
     try {
-      const fullInfo = await ytdl.getInfo(url, opts)
+      const infoOpts = {
+        requestOptions: {
+          headers: { ...baseHeaders },
+        },
+        agent,
+      }
+      if (authHeader) {
+        infoOpts.requestOptions.headers['Authorization'] = authHeader
+      }
+      const fullInfo = await ytdl.getInfo(url, infoOpts)
       result.formats = fullInfo.formats
         .filter(f => f.mimeType && f.hasAudio && f.url)
         .map(f => ({
@@ -74,13 +78,11 @@ export default async function handler(req, res) {
     } catch (formatErr) {
       const msg = formatErr.message?.toLowerCase() || ''
       if (msg.includes('playable formats')) {
-        result._formatError = cookies
-          ? 'No se pudieron obtener formatos incluso con cookies. Pueden haber expirado.'
-          : 'Video con restricción. Agregá tus cookies de YouTube para descargar.'
+        result._formatError = 'No se encontraron formatos. Las cookies pueden haber expirado o no ser suficientes.'
       } else if (msg.includes('age') || msg.includes('sign in')) {
-        result._formatError = 'Video con restricción de edad. Agregá tus cookies de YouTube para descargar.'
+        result._formatError = 'Requiere inicio de sesión en YouTube.'
       } else {
-        result._formatError = 'No se pudieron obtener los formatos de descarga.'
+        result._formatError = formatErr.message?.substring(0, 120) || 'Error desconocido al obtener formatos.'
       }
     }
 

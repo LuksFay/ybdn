@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Header from './components/Header'
 import UrlInput from './components/UrlInput'
 import VideoInfo from './components/VideoInfo'
@@ -15,14 +15,39 @@ function App() {
   const [error, setError] = useState('')
   const [selectedFormat, setSelectedFormat] = useState(null)
   const [currentUrl, setCurrentUrl] = useState('')
-  const [token, setToken] = useState(() => {
-    try { return localStorage.getItem('ybdn_google_token') || '' } catch { return '' }
+  const [cookies, setCookies] = useState(() => {
+    try { return localStorage.getItem('ybdn_cookies') || '' } catch { return '' }
   })
   const [history, setHistory] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('ybdn_history') || '[]')
     } catch { return [] }
   })
+
+  // Importar cookies via bookmarklet (?import-cookies=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const importData = params.get('import-cookies')
+    if (importData) {
+      try {
+        const parsed = JSON.parse(importData)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const json = JSON.stringify(parsed)
+          localStorage.setItem('ybdn_cookies', json)
+          setCookies(json)
+          window.history.replaceState({}, '', window.location.pathname)
+        }
+      } catch {}
+    }
+  }, [])
+
+  const reset = useCallback(() => {
+    setVideoData(null)
+    setLoading(false)
+    setError('')
+    setSelectedFormat(null)
+    setCurrentUrl('')
+  }, [])
 
   const addToHistory = useCallback((item) => {
     setHistory(prev => {
@@ -38,9 +63,9 @@ function App() {
     localStorage.removeItem('ybdn_history')
   }, [])
 
-  const handleTokenChange = useCallback((val) => {
-    setToken(val)
-    localStorage.setItem('ybdn_google_token', val)
+  const handleCookiesChange = useCallback((val) => {
+    setCookies(val)
+    localStorage.setItem('ybdn_cookies', val)
   }, [])
 
   const handleSubmit = async (url) => {
@@ -51,9 +76,11 @@ function App() {
     setCurrentUrl(url)
 
     try {
-      const data = await getVideoInfo(url, token || undefined)
+      const data = await getVideoInfo(url, cookies || undefined)
       setVideoData(data)
-      addToHistory({ url, title: data.title, thumbnail: data.thumbnail, timestamp: Date.now() })
+      if (data.title) {
+        addToHistory({ url, title: data.title, thumbnail: data.thumbnail, timestamp: Date.now() })
+      }
       if (data.formats?.length > 0) {
         setSelectedFormat(data.formats[0].itag)
       }
@@ -70,7 +97,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header onReset={reset} />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-10">
         <UrlInput onSubmit={handleSubmit} loading={loading} />
@@ -90,16 +117,17 @@ function App() {
 
         {videoData && !loading && (
           <div className="mt-8 space-y-6">
-            <VideoInfo data={videoData} />
+            {videoData.title && <VideoInfo data={videoData} />}
 
-            {videoData._formatError && (
+            {videoData._formatError ? (
               <div className="p-4 bg-yellow-900/30 border border-yellow-700 rounded-xl">
-                <CookieInput token={token} onTokenChange={handleTokenChange} />
+                <CookieInput cookies={cookies} onCookiesChange={handleCookiesChange} />
               </div>
-            )}
-
-            {videoData.formats?.length > 0 ? (
+            ) : videoData.formats?.length > 0 ? (
               <>
+                <p className="text-xs text-slate-500">
+                  {videoData.formats.length} formatos disponibles
+                </p>
                 <FormatSelector
                   formats={videoData.formats}
                   selected={selectedFormat}
@@ -109,12 +137,12 @@ function App() {
                   url={currentUrl}
                   itag={selectedFormat}
                   filename={videoData.title}
-                  token={token}
+                  cookies={cookies}
                 />
               </>
-            ) : !videoData._formatError && (
+            ) : (
               <p className="text-center text-slate-500 text-sm">
-                No hay formatos disponibles para este video.
+                No se encontraron formatos de descarga.
               </p>
             )}
           </div>

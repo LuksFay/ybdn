@@ -1,9 +1,9 @@
 const API_BASE = '/api'
 
-export async function getVideoInfo(url, token) {
+export async function getVideoInfo(url, cookies) {
   const params = new URLSearchParams({ url })
   const headers = {}
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  if (cookies) headers['X-YBDN-Cookies'] = cookies
 
   const res = await fetch(`${API_BASE}/info?${params}`, { headers })
   if (!res.ok) {
@@ -13,8 +13,8 @@ export async function getVideoInfo(url, token) {
   return res.json()
 }
 
-export function getDownloadUrl(url, itag, token) {
+export function getDownloadUrl(url, itag, cookies) {
   const params = new URLSearchParams({ url, itag })
-  if (token) params.set('token', token)
+  if (cookies) params.set('cookies', cookies)
   return `${API_BASE}/download?${params}`
 }
